@@ -7,6 +7,9 @@ import { path }             from "./dep.ts";
 if(import.meta.main){
     await esbuild.initialize_esbuild()
     
+    //compile base but override output folder //TODO: should be bundled
+    preact.compile_default({static: paths.static_()})
+
     const dep_ts = path.join(paths.frontend(), 'dep.ts')
     esbuild.compile_esbuild(dep_ts, './static/dep.ts')
     esbuild.compile_esbuild(
