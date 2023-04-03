@@ -15,7 +15,7 @@ class App(BaseApp):
     def __init__(self, *args, **kw):
         backend.settings.ensure_pretrained_models()
         
-        super().__init__(*args, **kw)
+        super().__init__(*args, path_to_deno='./deno.sh', path_to_deno_cfg='./deno.jsonc', **kw)
         if self.is_reloader:
             return
 
