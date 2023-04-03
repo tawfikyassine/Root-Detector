@@ -1,8 +1,16 @@
 import { preact, JSX }  from "./dep.ts";
-import { base }         from "./dep.ts";
+import * as base        from "./base.ts";
 
-function Body(): JSX.Element {
-    return <base.Body id={"roots"} />
+import { MainContainer }    from "./roots/MainContainer.tsx";
+
+class Body extends base.Body {
+    /** @override */
+    id = 'roots'
+
+    /** @override */
+    main_container(): JSX.Element {
+        return <MainContainer />
+    }
 }
 
 
@@ -14,8 +22,6 @@ export function Index(): JSX.Element {
 }
 
 if(!globalThis.Deno){
-    base.hydrate_body('roots')
-    //body onload callback doesnt work for some reason
-    //await load_settings()
+    base.hydrate_body(<Body />, 'roots')
 }
 
