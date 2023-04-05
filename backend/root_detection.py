@@ -63,6 +63,7 @@ def save_result(result:dict, image_path:str) -> dict:
 
     return {
         'segmentation': segmentation_fname,
+        'classmap'    : segmentation_fname,
         'skeleton'    : skeleton_fname,
         'statistics'  : result['statistics'],
     }

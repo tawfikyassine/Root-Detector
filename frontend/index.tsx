@@ -1,6 +1,4 @@
-import { preact, JSX }  from "./dep.ts";
-import * as base        from "./base.ts";
-
+import { base, JSX }        from "./dep.ts";
 import { MainContainer }    from "./roots/MainContainer.tsx";
 
 class Body extends base.Body {
