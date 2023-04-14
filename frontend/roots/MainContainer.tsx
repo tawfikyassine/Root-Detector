@@ -10,9 +10,9 @@ export class MainContainer extends base.MainContainer {
     /** @override */
     tab_contents(): JSX.Element[] {
         return [
-            <DetectionTab       name={this.tab_names[0]!} />,
-            <TrackingTab        name={this.tab_names[1]!}/>,
-            <base.TrainingTab   name={this.tab_names[1]!}/>,
+            <DetectionTab     name={this.tab_names[0]!} appstate={this.props.appstate}/>,
+            <TrackingTab      name={this.tab_names[1]!}/>,
+            <base.TrainingTab name={this.tab_names[1]!}/>,
         ]
     }
 }

@@ -1,6 +1,5 @@
 import { JSX, base, preact }    from "../dep.ts"; 
 import { Signal }               from "../dep.ts"; 
-import { STATE }                from "../dep.ts"     //FIXME: hard-coded
 
 import * as state               from "./state.ts"
 import "./state.ts" //needed for now to ensure that new STATE is set
@@ -8,13 +7,13 @@ import "./state.ts" //needed for now to ensure that new STATE is set
 
 /** @override */
 class DetectionContent extends base.FileTableContent {
-    /** @override */
+    /** @override No boxes */
     $box_drawing_mode = undefined;
     
     /** @override */
     view_menu_extras(): JSX.Element[] {
-        const result: state.RootResultState | null
-            = validate_RootResultState(this.props.file.$result.value)
+        const result: state.RootsResultSignal | null
+            = validate_RootResultState(this.props.$result)
         
         if(result){
             return [
@@ -29,10 +28,11 @@ class DetectionContent extends base.FileTableContent {
 export class DetectionTab extends base.DetectionTab {
     /** @override */
     file_table(): JSX.Element {
+        const appstate:base.AppState = this.props.appstate
         return <base.FileTable 
             sortable        =   {false} 
-            files           =   {STATE.files}        //FIXME: hard-coded
-            processing      =   {STATE.processing}   //FIXME: hard-coded
+            files           =   {appstate.files}
+            processing      =   {appstate.$processing}
             labels_column   =   {false}
             FileTableContent =  {DetectionContent}
         />; 
@@ -41,14 +41,16 @@ export class DetectionTab extends base.DetectionTab {
 
 
 type ShowSkeletonCheckboxProps = {
-    result: state.RootResultState
+    result: state.RootsResultSignal
 }
 
+//TODO: code re-use
 class ShowSkeletonCheckbox extends preact.Component<ShowSkeletonCheckboxProps> {
     ref: preact.RefObject<HTMLDivElement> = preact.createRef()
 
     render(props:ShowSkeletonCheckboxProps): JSX.Element {
-        const processed:boolean = ( props.result.status == 'processed')
+        const processed:boolean = ( props.result.value.status == 'processed')
+        //TODO should be also disabled if results are not shown
         const disabled:string   = processed?  '' : 'disabled'
         return <div class={"ui item checkbox show-results-checkbox "+disabled} ref={this.ref}>
             <input 
@@ -79,7 +81,7 @@ class ShowSkeletonCheckbox extends preact.Component<ShowSkeletonCheckboxProps> {
 
 
 
-function validate_RootResultState(x:base.ResultState): state.RootResultState|null {
+function validate_RootResultState(x:base.ResultSignal): state.RootsResultSignal|null {
     if(base.util.has_property_of_type(x, '$show_skeleton', validate_signal)){
         return x;
     }
