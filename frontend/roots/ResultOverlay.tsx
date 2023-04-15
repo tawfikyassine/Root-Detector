@@ -1,5 +1,5 @@
 import { base}                              from "../dep.ts";
-import { JSX, Signal, ReadonlySignal }      from "../dep.ts";
+import { JSX, Signal, signals }             from "../dep.ts";
 import * as state                           from "./state.ts";
 
 
@@ -14,37 +14,37 @@ export class RootsResultOverlays extends base.ResultOverlays<RootsResultOverlays
     maybe_create_image_overlay(): JSX.Element|null {
         const $result:state.RootsResultSignal = this.props.$result;
         const result:state.RootsResult = this.props.$result.value;
-        if(result.classmap && result.skeleton)
-            return <RootsImageOverlay 
-                imagename       = {result.classmap}
-                skeletonimage   = {result.skeleton}
-                $visible        = {$result.$visible}
-            />
-        else return null; //TODO: some kind of error message
+        const $v0 = signals.computed(
+            () => $result.$visible.value && !$result.$show_skeleton.value
+        )
+        const $v1 = signals.computed(
+            () => $result.$visible.value && $result.$show_skeleton.value
+        )
+
+        const components:JSX.Element[] = []
+        if(result.classmap)
+            components.push(
+                <base.ImageOverlay
+                    imagename   = {result.classmap}
+                    $visible    = {$v0}
+                />
+            )
+        if(result.skeleton)
+            components.push(
+                <base.ImageOverlay
+                    imagename   = {result.skeleton}
+                    $visible    = {$v1}
+                />
+            )
+        
+        //if(components.length == 0)  //TODO: some kind of error message
+        return <>
+            { components }
+        </>
     }
 
     /** @override Return null, no boxes for roots */
     maybe_create_boxoverlay(): null {
         return null;
-    }
-}
-
-
-
-//TODO: maybe create two ImageOverlays instead of extending?
-
-type RootsImageOverlayProps = {
-    skeletonimage:  string;
-} & base.ImageOverlayProps;
-
-
-/** @override Image overlay which alternatively displays a skeletonized image */
-export class RootsImageOverlay extends base.ImageOverlay<RootsImageOverlayProps> {
-    skeleton_src: Signal<string|undefined> = new Signal();
-
-    /** @override */
-    async componentDidMount(): Promise<void> {
-        super.componentDidMount()
-        this.skeleton_src.value = await base.fetch_image_as_blob(this.props.skeletonimage)
     }
 }
