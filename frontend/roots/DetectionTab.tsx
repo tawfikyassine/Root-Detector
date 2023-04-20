@@ -17,8 +17,7 @@ class RootsDetectionContent extends base.FileTableContent<RootsDetectionContentP
     
     /** @override */
     view_menu_extras(): JSX.Element[] {
-        const $result: state.RootsResultSignal | null
-            = validate_RootResultState(this.props.$result)
+        const $result = this.props.$result;
         
         if($result){
             return [
@@ -93,21 +92,3 @@ class ShowSkeletonCheckbox extends preact.Component<ShowSkeletonCheckboxProps> {
 
 
 
-
-function validate_RootResultState(x:base.ResultSignal): state.RootsResultSignal|null {
-    if(base.util.has_property_of_type(x, '$show_skeleton', validate_signal)){
-        return x;
-    }
-    else return null;
-}
-
-function validate_signal(x:unknown): Signal<boolean>|null {
-    if(base.util.is_object(x) 
-    && base.util.has_property(x, 'subscribe')
-    && base.util.has_property(x, 'value')
-    && base.util.has_property(x, 'peek')){
-        //TODO: not typesafe!
-        return x as Signal<boolean>;
-    }
-    else return null;
-}
