@@ -1,5 +1,5 @@
 import { base}                              from "../dep.ts";
-import { JSX, Signal, signals }             from "../dep.ts";
+import { JSX, signals }                     from "../dep.ts";
 import * as state                           from "./state.ts";
 
 
@@ -13,7 +13,7 @@ export class RootsResultOverlays extends base.ResultOverlays<RootsResultOverlays
     /** @override Create a RootsImageOverlay */
     maybe_create_image_overlay(): JSX.Element|null {
         const $result:state.RootsResultSignal = this.props.$result;
-        const result:state.RootsResult = this.props.$result.value;
+        const result:state.RootsResult        = $result.value;
         const $v0 = signals.computed(
             () => $result.$visible.value && !$result.$show_skeleton.value
         )

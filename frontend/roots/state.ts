@@ -2,6 +2,7 @@ import { base }         from "../dep.ts";
 import { Signal }       from "../dep.ts";
 import * as detection   from "./detection.ts";
 import { export_roots_result }  from "./export.ts";
+import { RootsSettings }        from "./settings.ts";
 
 
 export class RootsInputFile extends base.InputFile {
@@ -28,7 +29,7 @@ export class RootsResult extends base.Result {
 }
 
 /** Mixin adding additional attributes for UI*/
-function RootsResultSignalMixin<TBase extends base.Result >(BaseClass: base.Constructor<TBase>){
+function RootsResultSignalMixin<T extends base.Result >(BaseClass: base.util.Constructor<T>){
     const Intermediate = base.ResultSignalMixin(BaseClass)
     return class RootsResultSignal extends Intermediate {
         /** Flag indicating whether to show normal roots segmentation or skeletonized */
@@ -36,32 +37,26 @@ function RootsResultSignalMixin<TBase extends base.Result >(BaseClass: base.Cons
     }
 }
 
-export type  RootsResultSignalConstructor = ReturnType<typeof RootsResultSignalMixin<RootsResult>>
-export const RootsResultSignal:RootsResultSignalConstructor = RootsResultSignalMixin(RootsResult)
 /** Result with additional attributes for UI */
-export type  RootsResultSignal = InstanceType<RootsResultSignalConstructor>
+export class RootsResultSignal extends RootsResultSignalMixin(RootsResult){}
 
-
-
-export type  RootsInputFileStateConstructor 
-    = ReturnType<typeof base.InputFileStateMixin<typeof RootsInputFile>>
 /** InputImage with added attributes for UI */
-export type  RootsInputFileState  = InstanceType<RootsInputFileStateConstructor>
-export const RootsInputFileState: RootsInputFileStateConstructor 
-    = base.InputFileStateMixin(RootsInputFile)
+export class RootsInputFileState extends base.InputFileStateMixin(RootsInputFile){}
 
 
 
-export type RootsInputFileListConstructor 
-    = ReturnType<typeof base.InputFileListMixin<RootsInputFileState, RootsResultSignal>>
-export const RootsInputFileList = base.InputFileListMixin(RootsInputFileState, RootsResultSignal)
-export type  RootsInputFileList = InstanceType<RootsInputFileListConstructor>
-
+export class RootsInputFileList 
+    extends base.InputFileListMixin(RootsInputFileState, RootsResultSignal) {}
 
 
 /** @override @see {@link base.AppState} */
-export class RootsAppState extends base.AppState {
-    /** Currently loaded files */
+export class RootsAppState extends base.AppState<RootsSettings> {
+    /** Currently loaded files 
+     *  @override */
     files: RootsInputFileList = new RootsInputFileList([]);
+
+    /** Which models can be selected in the settings 
+     *  @override */
+    //available_models: AvailableModelsSignal = new AvailableModelsSignal(undefined)
 }
 

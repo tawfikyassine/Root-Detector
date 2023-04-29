@@ -1,5 +1,6 @@
 import { base, JSX }        from "./dep.ts";
 import { MainContainer }    from "./roots/MainContainer.tsx";
+import { RootsTopMenu }     from "./roots/Settings.tsx";
 import * as state           from "./roots/state.ts"
 
 class Body extends base.Body {
@@ -7,12 +8,13 @@ class Body extends base.Body {
     id = 'roots'
 
     /** Global application state @override */
-    appstate: state.RootsAppState = new state.RootsAppState();
+    appstate = new state.RootsAppState();
 
     /** @override */
-    main_container(): JSX.Element {
-        return <MainContainer appstate={this.appstate}/>
-    }
+    MainContainer = MainContainer
+
+    /** @override */
+    TopMenu = RootsTopMenu;
 }
 
 
