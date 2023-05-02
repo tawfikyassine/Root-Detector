@@ -6,6 +6,7 @@ cache
 models/*
 !models/pretrained_models.txt
 tests/logs
+tests/coverage
 sync_models.py
 venv*
 .deno

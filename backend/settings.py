@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     def get_defaults(cls):
          defaults = super().get_defaults()
          defaults['exmask_enabled'] = False
+         defaults['exclusionmask_enabled'] = False
          defaults['use_gpu']        = False
          defaults['too_many_roots'] = 100000
          return defaults
