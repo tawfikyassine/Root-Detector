@@ -21,8 +21,6 @@ extends base.SettingsModal<RootsSettings> {
         if(settings == undefined)
             return []
         
-        console.log('SettingsModal:', settings, settings.exclusionmask_enabled)
-        
         const avmodels
             = this.props.$available_models.value?.detection
         const activemodel_exclusionmask: string = settings.active_models.exclusionmask
