@@ -3,7 +3,7 @@ import { Signal }       from "../dep.ts";
 import * as detection   from "./detection.ts";
 import { export_roots_result }  from "./export.ts";
 import { RootsSettings }        from "./settings.ts";
-import * as tracking            from "../lib/tracking.ts";
+import { TrackingInputFileList} from "./TrackingTab.tsx";
 
 
 export class RootsInputFile extends base.InputFile {
@@ -49,7 +49,7 @@ export class RootsInputFileState extends base.InputFileStateMixin(RootsInputFile
 export class RootsInputFileList 
     extends base.InputFileListMixin(RootsInputFileState, RootsResultSignal) {}
 
-export class TrackingInputFileList extends base.Reactive<tracking.TrackingImagePair[]>{};
+
 
 /** @override @see {@link base.AppState} */
 export class RootsAppState extends base.AppState<RootsSettings> {
@@ -58,8 +58,7 @@ export class RootsAppState extends base.AppState<RootsSettings> {
     files: RootsInputFileList = new RootsInputFileList([]);
 
     /** Currently loaded file pairs for tracking */
-    //file_pairs: TrackingInputFileList = new TrackingInputFileList([])
-    file_pairs: RootsInputFileList = new RootsInputFileList([]);
+    file_pairs: TrackingInputFileList = new TrackingInputFileList([])
 
     //TODO:
     /** Which models can be selected in the settings 
