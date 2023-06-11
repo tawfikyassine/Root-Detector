@@ -2,20 +2,17 @@ import { base } from "../dep.ts";
 
 
 //TODO: remove `extends inputfile`
-export class TrackingInput extends base.files.InputFile {
+export class TrackingInput extends base.files.Input {
     /** The chronologically older image */
     image0: File;
     /** The chronologically newer image */
     image1: File;
 
-    constructor(image0:File|TrackingInput, image1:File) {  //TODO: this gets called with only one argument from base/state.ts!
-        super(image0)
+    constructor(image0:File, image1:File) {
+        super(`${image0.name}.${image1.name}`)
+
         this.image0 = image0;
-        //XXX: i have no idea what I am doing
-        if('image1' in image0)
-            this.image1 = image0.image1;
-        else
-            this.image1 = image1
+        this.image1 = image1
     }
 }
 
@@ -28,8 +25,6 @@ export type TrackingInputResultPair = {
     input:   TrackingInput;
     result:  TrackingResult;
 }
-
-
 
 
 
@@ -46,3 +41,9 @@ export async function load_list_of_files(files: FileList|File[]): Promise<Tracki
     )
 }
 
+
+export class TrackingProcessingModule extends base.files.ProcessingModule<TrackingInput, TrackingResult> {
+    async process(_input: TrackingInput): Promise<TrackingResult> {
+        return await new TrackingResult('failed')
+    }
+}

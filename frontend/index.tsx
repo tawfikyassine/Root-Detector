@@ -18,7 +18,7 @@ class RootsApp extends base.create_App({
     async on_drop(event: JSX.TargetedDragEvent<HTMLElement>): Promise<FileList|undefined> {
         const files:FileList|undefined = await super.on_drop(event)
         
-        this.appstate.file_pairs.set_from_pairs( 
+        this.appstate.$file_pairs.value = base.input_result_signal_pairs_from_simple( 
             await tracking.load_list_of_files(files ?? [])
         )
         return files;
