@@ -42,8 +42,9 @@ export async function load_list_of_files(files: FileList|File[]): Promise<Tracki
 }
 
 
-export class TrackingProcessingModule extends base.files.ProcessingModule<TrackingInput, TrackingResult> {
-    async process(_input: TrackingInput): Promise<TrackingResult> {
+export class TrackingProcessingModule 
+extends base.files.ProcessingModule<TrackingInput, TrackingResult> {
+    async process(input: TrackingInput): Promise<TrackingResult> {
         return await new TrackingResult('failed')
     }
 }

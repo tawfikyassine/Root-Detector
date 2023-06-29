@@ -10,8 +10,7 @@ rm -rf $COVERAGE_DIR
     --no-prompt                 \
     --cached-only               \
     --coverage=$COVERAGE_DIR/raw    \
-    tests/ \
-    $@
+    ${@-tests/}
 
 NO_COLOR=1 ./deno.sh coverage --exclude=./tests $COVERAGE_DIR/raw > $COVERAGE_DIR/coverage.txt
 #./tests/combine_coverage.ts $COVERAGE_DIR/coverage.txt > $COVERAGE_DIR/coverage_summary.txt

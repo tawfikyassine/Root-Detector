@@ -74,6 +74,7 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
     image_ref0: preact.RefObject<base.InputImage> = preact.createRef()
     image_ref1: preact.RefObject<base.InputImage> = preact.createRef()
 
+    /** @override */
     contentview(): JSX.Element {
         return <>
         <base.ImageContainer>
@@ -96,8 +97,27 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
                     ref             = {this.image_ref1}
                 /> 
             </base.ImageControls>
+            <base.ProgressDimmer $result={ this.props.$result }/>
         </base.ImageContainer>
         </>
+    }
+
+    /** @override */
+    help_menu(): JSX.Element | undefined {
+        return <base.HelpButton>
+            <li>
+                <b>CTRL + Click</b> in both images to add a manual correction point
+            </li>
+            <li>
+                <b>CTRL + Drag</b> within the right image from 
+                <span class="ui red text"> red </span> to 
+                <span class="ui green text"> green </span> to add a manual correction point
+            </li>
+            <li>
+                <b>CTRL + Click</b> on a highlighted 
+                <span class="ui teal text"> cyan </span> point to remove it
+            </li>
+        </base.HelpButton>
     }
 
     componentDidMount(): void {
@@ -113,3 +133,5 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
         )
     }
 }
+
+
