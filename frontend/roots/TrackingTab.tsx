@@ -74,21 +74,35 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
     image_ref0: preact.RefObject<base.InputImage> = preact.createRef()
     image_ref1: preact.RefObject<base.InputImage> = preact.createRef()
 
+    svg_ref0:   preact.RefObject<SVGOverlay>      = preact.createRef()
+    svg_ref1:   preact.RefObject<SVGOverlay>      = preact.createRef()
+
     /** @override */
     contentview(): JSX.Element {
         return <>
         <base.ImageContainer>
-            <base.ImageControls $imagesize={this.$size0}>
+            <base.ImageControls 
+                $imagesize    = {this.$size0} 
+                on_mouse_move = {this.svg_ref0.current?.bind_on_mouse_move_cb()}
+            >
                 <base.InputImage 
                     inputfile       = {this.props.input.image0} 
                     $active_file    = {this.props.$active_file}
                     $size           = {this.$size0}
                     $loaded         = {this.props.$loaded}   //TODO: should have a $loaded for each image
                     ref             = {this.image_ref0}
-                /> 
+                />
+                <SVGOverlay 
+                    points = {[]} 
+                    size   = {this.$size0.value ?? {height:0, width:0}}
+                    ref    = {this.svg_ref0}
+                />
             </base.ImageControls>
             
-            <base.ImageControls $imagesize={this.$size1}>
+            <base.ImageControls 
+                $imagesize    = {this.$size1}
+                on_mouse_move = {this.svg_ref1.current?.bind_on_mouse_move_cb()}
+            >
                 <base.InputImage 
                     inputfile       = {this.props.input.image1} 
                     $active_file    = {this.props.$active_file} 
@@ -96,6 +110,11 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
                     $loaded         = {this.props.$loaded}   //TODO: should have a $loaded for each image
                     ref             = {this.image_ref1}
                 /> 
+                <SVGOverlay 
+                    points = {[]} 
+                    size   = {this.$size1.value ?? {height:0, width:0}}
+                    ref    = {this.svg_ref1}
+                />
             </base.ImageControls>
             <base.ProgressDimmer $result={ this.props.$result }/>
         </base.ImageContainer>
@@ -135,3 +154,124 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
 }
 
 
+
+type SVGOverlayProps = {
+    /** Matched points to display */
+    points: base.util.Point[];
+
+    size:   base.util.ImageSize;
+}
+
+/** SVG-based overlay displaying matched points and receiving corrections from user */
+export class SVGOverlay extends preact.Component<SVGOverlayProps> {
+    ref:     preact.RefObject<SVGSVGElement> = preact.createRef()
+    $cursor: Signal<base.util.Point>      = new Signal({x:0, y:0})
+
+    render(props: SVGOverlayProps): JSX.Element {
+        const viewbox = `0 0 ${props.size.width} ${props.size.height}`
+        return (
+        <svg 
+            class   = "overlay" 
+            viewBox = {viewbox} 
+            style   = { {...base.styles.overlay_css, pointerEvents:'none'} }
+            ref     = {this.ref}
+        >
+            <circle 
+                class   = "cursor" 
+                cx      = {this.$cursor.value.x} 
+                cy      = {this.$cursor.value.y} 
+                r       = "10px" 
+                fill    = "red" 
+            />
+        </svg>
+        )
+    }
+
+    on_mouse_move(event:MouseEvent): void {
+        if(event.target == null || this.ref.current == null)
+            return;
+        
+        this.$cursor.value = page2img_coordinates(
+            {x:event.pageX, y:event.pageY},
+            this.ref.current,
+            this.props.size,
+            event.target as HTMLElement,
+        ) ?? {x:0,y:0}
+    }
+
+    bind_on_mouse_move_cb(): (evnet:MouseEvent) => void {
+        return this.on_mouse_move.bind(this)
+    }
+}
+
+
+/** Translate page coordinates xy to img coordinates
+    (viewport element provides topleft corner and transform) */
+export function page2img_coordinates(
+    p:          base.util.Point, 
+    overlay:    Element,
+    ovsize:     base.util.ImageSize,
+    viewport:   HTMLElement
+): base.util.Point|null {
+    let size: base.util.Size;
+    if(navigator.userAgent.indexOf('Chrom') != -1){
+        //some layout issues with chrome
+        size = {height: overlay.clientHeight, width: overlay.clientWidth} //integer
+    } else {
+        const rect:DOMRect = overlay.getBoundingClientRect()
+        size = {height: rect.height, width: rect.width}
+        //var H = $(img).height()      //float
+        //var W = $(img).width()
+    }
+    
+    const xform:CSSMatrix|null = parse_css_matrix(viewport.style.transform);
+    if(xform == null)
+        return null;
+    
+    //absolute coordinates on the html element in pixels
+    const html_x_abs   = p.x - get_offset(viewport).left
+    const html_y_abs   = p.y - get_offset(viewport).top
+    //relative coordinates on the html element, range 0.0..1.0
+    const html_x_rel   = html_x_abs / size.width  / xform.scale
+    const html_y_rel   = html_y_abs / size.height / xform.scale
+    //absolute coordinates on the svg element
+    const svg_x_abs    = html_x_rel * ovsize.width
+    const svg_y_abs    = html_y_rel * ovsize.height
+    
+    return {x:svg_x_abs, y:svg_y_abs};
+}
+
+
+
+/** Not using DOMMatrix because not implemented in deno */
+type CSSMatrix = {
+    x:      number;
+    y:      number;
+    scale:  number;
+}
+
+/** Parse and validate css transform string like "matrix(1,0,0,1,0,0)" 
+ *  Not using DOMMatrix because not implemented in deno */
+export function parse_css_matrix(maxtrix:string): CSSMatrix|null {
+    const [a,b,c,d,x,y] = maxtrix.split('(')[1]?.split(')')[0]?.split(',').map(Number) ?? []
+    
+    if([x,y,a].includes(NaN) || [x,y,a].includes(undefined))
+        return null;
+
+    if(b!=0 || c!=0)
+        return null;
+    
+    if(a != d)
+        return null;
+    
+    return {x:x!, y:y!, scale:a!};
+}
+
+function get_offset(el:HTMLElement) {
+    const box = el.getBoundingClientRect();
+  
+    return {
+      top:  box.top + window.pageYOffset - document.documentElement.clientTop,
+      left: box.left + window.pageXOffset - document.documentElement.clientLeft
+    };
+  }
