@@ -1,8 +1,7 @@
 import { base }         from "../dep.ts";
 import { Signal }       from "../dep.ts";
-//import { export_roots_result }  from "./export.ts";
-import { RootsSettings }        from "./settings.ts";
-import { TrackingInputFileList} from "./TrackingTab.tsx";
+import { RootsSettings, MODELTYPES }    from "./settings.ts";
+import { TrackingInputFileList}         from "./TrackingTab.tsx";
 
 import { RootsInputFile, RootsResult } from "../lib/detection.ts";
 
@@ -10,7 +9,8 @@ import { RootsInputFile, RootsResult } from "../lib/detection.ts";
 
 export class RootsInputFileList extends base.InputFileList<RootsInputFile, RootsResult> {}
 
-
+export type  AvailableModels = base.settings.AvailableModels<MODELTYPES>
+export class AvailableModelsSignal extends Signal<AvailableModels|undefined> {}
 
 /** @override @see {@link base.AppState} */
 export class RootsAppState extends base.AppState<RootsSettings> {
@@ -24,6 +24,6 @@ export class RootsAppState extends base.AppState<RootsSettings> {
     //TODO:
     /** Which models can be selected in the settings 
      *  @override */
-    //available_models: AvailableModelsSignal = new AvailableModelsSignal(undefined)
+    available_models: AvailableModelsSignal = new AvailableModelsSignal(undefined)
 }
 

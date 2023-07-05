@@ -1,10 +1,12 @@
 import { base }             from "../dep.ts";
 
 
+export type MODELTYPES = 'detection'|'exclusion_mask'|'tracking';
+
 export type RootsSettings = base.settings.Settings & {
     /** Currently set models by type 
      * @override */
-    active_models:          base.settings.ActiveModels<'detection'|'exclusionmask'>;
+    active_models:          base.settings.ActiveModels<MODELTYPES>;
 
     /** Process input files with the exclusion mask model */
     exclusionmask_enabled:  boolean;
@@ -29,7 +31,8 @@ export async function load_roots_settings(): Promise<SettingsResponse|null> {
 function validate_active_models(x:unknown): RootsSettings['active_models']|null {
     if(base.util.is_object(x)
     && base.util.has_string_property(x, 'detection')
-    && base.util.has_string_property(x, 'exclusionmask') ) {
+    && base.util.has_string_property(x, 'exclusion_mask')
+    && base.util.has_string_property(x, 'tracking') ) {
         return x;
     }
     else return null;

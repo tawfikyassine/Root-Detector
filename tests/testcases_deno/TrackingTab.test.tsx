@@ -1,12 +1,14 @@
 import { SVGOverlay }           from "../../frontend/roots/TrackingTab.tsx";
 import { parse_css_matrix }     from "../../frontend/roots/TrackingTab.tsx";
+import { base }                 from "../../frontend/dep.ts";
 import { util, asserts }        from "./dep.ts";
 import { preact, JSX, Signal }  from "../../frontend/dep.ts";
 
 Deno.test('SVGOverlay', async (t:Deno.TestContext) => {
     const document:Document = await util.setup_jsdom()
     
-    const overlay = <SVGOverlay points={[]} size={ {width:500, height:500} }/>
+    const $points = new Signal<base.util.Point[]>([])
+    const overlay = <SVGOverlay $points={$points} size={ {width:500, height:500} }/>
     preact.render(overlay, document.body)
     await util.wait(1)
 
@@ -14,7 +16,24 @@ Deno.test('SVGOverlay', async (t:Deno.TestContext) => {
     asserts.assertExists(svg)
     const viewbox:string|null = svg.getAttribute('viewBox')
     asserts.assertEquals(viewbox, "0 0 500 500")
-    
+
+
+    $points.value = [
+        {x:100, y:200},
+        {x:150, y:300},
+        {x:200, y:250},
+    ]
+    await util.wait(1)
+
+    const svg_points:SVGPolylineElement|null = document.querySelector('polyline')
+    asserts.assertExists(svg_points)
+    const points = svg_points.getAttribute('points')
+    asserts.assertExists(points)
+    asserts.assertNotEquals(points.length, 0)
+
+    /*asserts.assertExists(
+        document.querySelector('marker#dot-marker')
+    )*/
 })
 
 

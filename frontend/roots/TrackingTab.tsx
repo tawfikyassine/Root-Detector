@@ -35,6 +35,9 @@ export class TrackingTab extends base.DetectionTab<state.RootsAppState> {
             FileTableRow     =  {RootsTrackingRow}
             processingmodule =  {new TrackingProcessingModule()}
         />
+
+        
+        <SVGMarkers />
         </>; 
     }
 }
@@ -77,6 +80,13 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
     svg_ref0:   preact.RefObject<SVGOverlay>      = preact.createRef()
     svg_ref1:   preact.RefObject<SVGOverlay>      = preact.createRef()
 
+    $points0:   Readonly<Signal<base.util.Point[]>> = signals.computed(
+        () => this.props.$result.value.points0
+    )
+    $points1:   Readonly<Signal<base.util.Point[]>> = signals.computed(
+        () => this.props.$result.value.points1
+    )
+
     /** @override */
     contentview(): JSX.Element {
         return <>
@@ -93,9 +103,9 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
                     ref             = {this.image_ref0}
                 />
                 <SVGOverlay 
-                    points = {[]} 
-                    size   = {this.$size0.value ?? {height:0, width:0}}
-                    ref    = {this.svg_ref0}
+                    $points = {this.$points0} 
+                    size    = {this.$size0.value ?? {height:0, width:0}}
+                    ref     = {this.svg_ref0}
                 />
             </base.ImageControls>
             
@@ -111,9 +121,9 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
                     ref             = {this.image_ref1}
                 /> 
                 <SVGOverlay 
-                    points = {[]} 
-                    size   = {this.$size1.value ?? {height:0, width:0}}
-                    ref    = {this.svg_ref1}
+                    $points = {this.$points1} 
+                    size    = {this.$size1.value ?? {height:0, width:0}}
+                    ref     = {this.svg_ref1}
                 />
             </base.ImageControls>
             <base.ProgressDimmer $result={ this.props.$result }/>
@@ -139,6 +149,12 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
         </base.HelpButton>
     }
 
+    content_menu_extras(): JSX.Element[] {
+        return [
+            <ApplyCorrectionsButton on_click={() => console.warn('Corrections not implemented')}/>
+        ]
+    }
+
     componentDidMount(): void {
         super.componentDidMount?.()
 
@@ -153,13 +169,25 @@ class RootsTrackingContent extends base.FileTableContent<TrackingInput, Tracking
     }
 }
 
+//TODO: visibility?
+export function ApplyCorrectionsButton(props:{on_click:() => void}): JSX.Element {
+    return (
+    <a 
+        class         = "item" 
+        onClick       = {props.on_click}
+        data-tooltip  = "Apply manual corrections" 
+        data-position = "bottom left">
+        <i class="check icon"></i>
+    </a>
+    )
+}
 
 
 type SVGOverlayProps = {
     /** Matched points to display */
-    points: base.util.Point[];
+    $points: Signal<base.util.Point[]>;
 
-    size:   base.util.ImageSize;
+    size:    base.util.ImageSize;
 }
 
 /** SVG-based overlay displaying matched points and receiving corrections from user */
@@ -170,6 +198,7 @@ export class SVGOverlay extends preact.Component<SVGOverlayProps> {
     render(props: SVGOverlayProps): JSX.Element {
         const viewbox = `0 0 ${props.size.width} ${props.size.height}`
         return (
+        <>
         <svg 
             class   = "overlay" 
             viewBox = {viewbox} 
@@ -180,10 +209,12 @@ export class SVGOverlay extends preact.Component<SVGOverlayProps> {
                 class   = "cursor" 
                 cx      = {this.$cursor.value.x} 
                 cy      = {this.$cursor.value.y} 
-                r       = "10px" 
+                r       = "10px"       //TODO: variable radius depending on zoom
                 fill    = "red" 
             />
+            <MatchedPoints $points={props.$points}/>
         </svg>
+        </>
         )
     }
 
@@ -275,3 +306,69 @@ function get_offset(el:HTMLElement) {
       left: box.left + window.pageXOffset - document.documentElement.clientLeft
     };
   }
+
+
+
+type MatchedPointsProps = {
+    $points: Signal<base.util.Point[]>;
+}
+
+/** SVG element displaying single points */
+export class MatchedPoints extends preact.Component<MatchedPointsProps> {
+    render(props:MatchedPointsProps): JSX.Element {
+        const p_str:string = props.$points.value.map(
+            p => `${p.x},${p.y}`
+        ).join(' ')
+
+        return (
+        <polyline 
+            class        = "matched-points"
+            points       = {p_str} 
+            fill         = "none" 
+            stroke       = "none"
+            marker-start = "url(#dot-marker)" 
+            marker-mid   = "url(#dot-marker)" 
+            marker-end   = "url(#dot-marker)" />
+        )
+    }
+}
+
+
+export function SVGMarkers(): JSX.Element {
+    return <svg style="position:absolute; pointer-events:none;" id="svg-defs">
+        <defs>
+            <marker 
+                id           = "dot-marker" 
+                viewBox      = "0 0 4 4" 
+                refX         = "2" 
+                refY         = "2" 
+                markerHeight = "2" 
+                markerWidth  = "2"
+            >
+                <circle r="2" cx="2" cy="2" fill="blue"></circle>
+            </marker>
+
+            <marker 
+                id           = "dot-marker-red" 
+                viewBox      = "0 0 2 2" 
+                refX         = "1" 
+                refY         = "1" 
+                markerHeight = "1" 
+                markerWidth  = "1"
+            >
+                <circle r="1" cx="1" cy="1" fill="red"></circle>
+            </marker>
+            
+            <marker 
+                id           = "dot-marker-green" 
+                viewBox      = "0 0 2 2" 
+                refX         = "1" 
+                refY         = "1" 
+                markerHeight = "1" 
+                markerWidth  = "1"
+            >
+                <circle r="1" cx="1" cy="1" fill="green"></circle>
+            </marker>
+        </defs>
+    </svg>
+}

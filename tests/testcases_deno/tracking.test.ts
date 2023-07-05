@@ -24,14 +24,25 @@ Deno.test('TrackingProcessingModule', async (t:Deno.TestContext) => {
 
 
     await t.step('success', async () => {
-        util.mock_fetch(async () => {
+        const spy: mock.Spy = util.mock_fetch(async () => {
             return await new Response(JSON.stringify({
-
+                points0: [ [10,10], [50,50], [100,100] ],
+                points1: [ [20,20], [70,70], [120,120] ],
             }))
         })
         const result:tracking.TrackingResult = await module.process(mockinput)
+        
+        const used_url:string = spy.calls[2]?.args[0]
+        asserts.assertFalse(used_url.startsWith('/'))
+        const used_params = new URLSearchParams(used_url.slice(used_url.search(/\?/)))
+        asserts.assertEquals(used_params.get('filename0'), mockinput.image0.name)
+        asserts.assertEquals(used_params.get('filename1'), mockinput.image1.name)
+
         asserts.assertEquals(result.status, 'processed')
+        asserts.assertEquals(result.points0.length, 3)
     })
     mock.restore()
+
+    //TODO: invalid response
 })
 

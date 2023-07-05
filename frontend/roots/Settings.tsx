@@ -1,6 +1,7 @@
 import { JSX, preact, Signal }      from "../dep.ts"
 import { base }                     from "../dep.ts";
-import { RootsSettings } from "./settings.ts";
+import { RootsSettings }            from "./settings.ts";
+import { AvailableModelsSignal }    from "./state.ts";
 
 
 export class RootsTopMenu extends base.TopMenu {
@@ -9,11 +10,16 @@ export class RootsTopMenu extends base.TopMenu {
 }
 
 
-export class RootsSettingsModal 
-extends base.SettingsModal<RootsSettings> {
-    exclusionmask_checkbox: preact.RefObject<CheckboxedField> = preact.createRef()
-    exclusionmask_selection: preact.RefObject<base.ModelSelection> = preact.createRef()
+type RootsSettingsModalProps = base.SettingsModalProps<RootsSettings> & {
+    $available_models: AvailableModelsSignal;
+}
 
+
+export class RootsSettingsModal 
+extends base.SettingsModal<RootsSettings, RootsSettingsModalProps> {
+    exclusionmask_checkbox:  preact.RefObject<CheckboxedField>     = preact.createRef()
+    exclusionmask_selection: preact.RefObject<base.ModelSelection> = preact.createRef()
+    tracking_selection:      preact.RefObject<base.ModelSelection> = preact.createRef()
 
     /** @override */
     form_content(): JSX.Element[] {
@@ -21,9 +27,14 @@ extends base.SettingsModal<RootsSettings> {
         if(settings == undefined)
             return []
         
-        const avmodels
-            = this.props.$available_models.value?.detection
-        const activemodel_exclusionmask: string = settings.active_models.exclusionmask
+        const avmodels_exclusionmask: base.settings.ModelInfo[] | undefined
+            = this.props.$available_models.value?.exclusion_mask
+        const activemodel_exclusionmask: string = settings.active_models.exclusion_mask
+
+        const avmodels_tracking: base.settings.ModelInfo[] | undefined
+            = this.props.$available_models.value?.tracking
+        const activemodel_tracking: string = settings.active_models.tracking
+
         
         return super.form_content().concat([
             <div class="ui divider"></div>,
@@ -37,11 +48,19 @@ extends base.SettingsModal<RootsSettings> {
             >
                 <base.ModelSelection 
                     active_model     = {activemodel_exclusionmask}
-                    available_models = {avmodels}
+                    available_models = {avmodels_exclusionmask}
                     ref              = {this.exclusionmask_selection}
                     label            = {"Exclusion mask model"}
                 />
-            </CheckboxedField>
+            </CheckboxedField>,
+
+            <div class="ui divider"></div>,
+            <base.ModelSelection 
+                active_model     = {activemodel_tracking}
+                available_models = {avmodels_tracking}
+                label            = {"Root tracking model"}
+                ref              = {this.tracking_selection}
+            />
         ])
     }
 
@@ -51,21 +70,22 @@ extends base.SettingsModal<RootsSettings> {
         if(settings == null)
             return null;
 
-        if(this.exclusionmask_checkbox.current == null
-        || this.exclusionmask_selection.current == null)
+        if(this.exclusionmask_checkbox.current  == null
+        || this.exclusionmask_selection.current == null
+        || this.tracking_selection.current      == null)
             return null;
         
         const exmask_enabled:boolean = this.exclusionmask_checkbox.current.get_value()
         const exmask_model:string|undefined
             = this.exclusionmask_selection.current.get_selected()?.name
-            /*?? this.props.$settings.value?.active_models.exclusionmask
-        if(exmask_model == undefined)
-            return null;*/
-
+        const tracking_model:string|undefined
+            = this.tracking_selection.current.get_selected()?.name
+        
         const rootssettings: RootsSettings = {
             active_models : {
-                detection:      settings?.active_models.detection,
-                exclusionmask:  exmask_model ?? 'TODO',
+                detection:      settings.active_models.detection,
+                exclusion_mask: exmask_model ?? 'TODO',
+                tracking:       tracking_model ?? 'TODO',
             },
             exclusionmask_enabled: exmask_enabled,
             too_many_roots:       9999999,                                                    //TODO
