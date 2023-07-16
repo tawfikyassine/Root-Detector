@@ -68,17 +68,101 @@ export type TrackingInputResultPair = {
 
 
 
-export async function load_list_of_files(files: FileList|File[]): Promise<TrackingInputResultPair[]> {
-    const {inputfiles} 
-        = base.file_input.categorize_files(files, base.file_input.MIMETYPES)
+
+export type ParsedFilename = {
+    date:          Date;
+    experiment_id: string;
+}
+
+
+//TODO: also consider exif data
+
+/** Try to extract a date and the experiment name from a filename. 
+ *  Several date formats supported: YYYY.MM.DD, DD.MM.YY, DD.MM.YY, YYYY-MM-DD */
+export function parse_filename(filename:string): ParsedFilename | null {
+    const date_candidates: string[] = filename.split('_')
+    let date                        = new Date(NaN)
+    let datestring          = '';
+
+    for(datestring of date_candidates) {
+        for(const separator of ['.', '-']) {
+            const splits: string[] = datestring.split(separator)
+            if(splits.map(Number).filter(Boolean).length == 3){
+                const [a,b,c] = splits;
+                let y:number, m:number, d:number;
+                if(a!.length > 2)
+                    //interpreting as format YYYYMMDD
+                    [y,m,d] = [a,b,c].map(Number) as [number, number, number]
+                else if(c!.length > 2)
+                    //interpreting as format DDMMYYYY
+                    [y,m,d] = [c,b,a].map(Number) as [number, number, number]
+                else {
+                    //interpreting as format DDMMYY
+                    [y,m,d] = [c,b,a].map(Number) as [number, number, number]
+                    y           = y<70? (y+2000) : (y+1900);    //1970-2069
+                }
+                date = new Date(y, m-1, d);
+                break;
+            }
+        }
+        if(!isNaN(date.getTime()))
+            break;
+    }
     
-    //TODO: files to pairs
-    return inputfiles.map(
-        (f:File) => ({
-            input:  new TrackingInput(inputfiles[0]!, f),
-            result: new TrackingResult(),
-        })
-    )
+    if(isNaN(date.getTime()))
+        return null;
+    
+    let experiment_id:string = filename.split(datestring)[0]!
+    if(experiment_id.endsWith('_'))
+        experiment_id = experiment_id.slice(0, experiment_id.length-1)
+    return {experiment_id, date}
+}
+
+//convenience type
+type FileWithParsedName = File & ParsedFilename;
+
+
+export function load_list_of_files(files: FileList|File[]): TrackingInputResultPair[] {
+    const {inputfiles}
+        = base.file_input.categorize_files(files, base.file_input.MIMETYPES)
+
+    //group files together by their experiment name and sort by date
+    const grouped_files: Map<string, FileWithParsedName[]> = new Map()
+    for(const inputfile of inputfiles) {
+        const parsed:ParsedFilename|null = parse_filename(inputfile.name)
+        if(parsed == null)
+            continue;
+        
+        const group:FileWithParsedName[] = grouped_files.get(parsed.experiment_id) ?? []
+        group.push(Object.assign(inputfile, parsed))
+        grouped_files.set(parsed.experiment_id, group)
+    }
+
+    const pairs:TrackingInputResultPair[] = []
+    const groupnames:string[] = [...grouped_files.keys()].sort()
+    for(const groupname of groupnames) {
+        const group:FileWithParsedName[] = grouped_files.get(groupname) ?? []
+        if(group.length < 2)
+            continue;
+        
+        group.sort( 
+            (a:ParsedFilename, b:ParsedFilename) => (a.date.getTime() - b.date.getTime())
+        )
+
+        //files to pairs
+        for(const k in group) {
+            // deno-lint-ignore no-inferrable-types
+            const i:number = Number(k)
+            if(i == 0)
+                continue;
+            
+            pairs.push({
+                input:  new TrackingInput(group[i-1]!, group[i]!),
+                result: new TrackingResult(),
+            })
+        }
+    }
+    return pairs;
 }
 
 
@@ -90,9 +174,9 @@ extends base.files.ProcessingModule<TrackingInput, TrackingResult> {
     ): Promise<TrackingResult> {
         on_progress?.({input, result:new TrackingResult("processing")})
 
-        const ok0 = base.util.upload_file_no_throw(input.image0)
-        const ok1 = base.util.upload_file_no_throw(input.image1)
-        if((await ok0) instanceof Error || (await ok1) instanceof Error)
+        const ok0: Response|Error = await base.util.upload_file_no_throw(input.image0)
+        const ok1: Response|Error = await base.util.upload_file_no_throw(input.image1)
+        if(ok0 instanceof Error || ok1 instanceof Error)
             return new TrackingResult('failed')
         
         const request_data = {filename0:input.image0.name, filename1:input.image1.name}
